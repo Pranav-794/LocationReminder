@@ -3,6 +3,7 @@ package com.udacity.project4.locationreminders.savereminder.selectreminderlocati
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.location.Location
 import android.os.Bundle
 import android.view.*
@@ -17,10 +18,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.PointOfInterest
+import com.google.android.gms.maps.model.*
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.databinding.FragmentSelectLocationBinding
@@ -118,6 +116,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         enableMyLocation()
         zoomToCurrentLocation()
         setPoiClick(mMap)
+        setMapStyle(mMap)
         Toast.makeText(context, selectPOIText, Toast.LENGTH_LONG).show()
         Timber.i("Map is ready!")
     }
@@ -147,6 +146,27 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             currentPOI = poi
         }
     }
+
+    private fun setMapStyle(map: GoogleMap) {
+        try {
+            // Customize the styling of the base map using a JSON object defined
+            // in a raw resource file.
+            val success = map.setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(
+                    context,
+                    R.raw.map_style
+                )
+            )
+
+            if (!success) {
+               Timber.e("Style parsing failed.")
+            }
+        } catch (e: Resources.NotFoundException) {
+            Timber.e("Can't find style. Error: ${e.message}")
+        }
+    }
+
+
     private fun isPermissionGranted() : Boolean {
         return ContextCompat.checkSelfPermission(
             context!!,

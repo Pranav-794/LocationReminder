@@ -82,5 +82,8 @@ class SaveReminderViewModel(val app: Application, val dataSource: ReminderDataSo
 
     fun savePOILocation(poi: PointOfInterest?) {
         selectedPOI.value = poi
+        reminderSelectedLocationStr.value = poi?.name
+        latitude.value = poi?.latLng?.latitude
+        longitude.value = poi?.latLng?.longitude
     }
 }
