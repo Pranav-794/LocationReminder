@@ -116,6 +116,13 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         mMap = googleMap
         // track current location
         enableMyLocation()
+        zoomToCurrentLocation()
+        setPoiClick(mMap)
+        Toast.makeText(context, selectPOIText, Toast.LENGTH_LONG).show()
+        Timber.i("Map is ready!")
+    }
+
+    private fun zoomToCurrentLocation() {
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location: Location? ->
                 // Got last known location. In some rare situations this can be null.
@@ -125,10 +132,6 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                     mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, zoomLevel))
                 }
             }
-        setPoiClick(mMap)
-        Toast.makeText(context, selectPOIText, Toast.LENGTH_LONG).show()
-
-        Timber.i("Map is ready!")
     }
 
     private fun setPoiClick(map: GoogleMap) {
@@ -160,8 +163,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             mMap.setMyLocationEnabled(true)
         }
         else {
-            ActivityCompat.requestPermissions(
-                activity!!,
+            requestPermissions(
                 arrayOf<String>(Manifest.permission.ACCESS_FINE_LOCATION),
                 REQUEST_LOCATION_PERMISSION
             )
@@ -175,8 +177,9 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         // Check if location permissions are granted and if so enable the
         // location data layer.
         if (requestCode == REQUEST_LOCATION_PERMISSION) {
-            if (grantResults.size > 0 && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+            if (grantResults.isNotEmpty() && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                 enableMyLocation()
+                zoomToCurrentLocation()
             }
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
