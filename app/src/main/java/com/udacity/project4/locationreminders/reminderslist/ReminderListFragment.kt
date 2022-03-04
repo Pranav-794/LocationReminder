@@ -13,7 +13,6 @@ import com.udacity.project4.databinding.FragmentRemindersBinding
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import com.udacity.project4.utils.setTitle
 import com.udacity.project4.utils.setup
-import kotlinx.android.synthetic.main.it_reminder.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class ReminderListFragment : BaseFragment() {
@@ -74,10 +73,10 @@ class ReminderListFragment : BaseFragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.logout -> {
-//                TODO: add the logout implementation
-                AuthUI.getInstance().signOut(requireContext())
-                val intent = Intent(context, AuthenticationActivity::class.java)
-                startActivity(intent)
+                AuthUI.getInstance().signOut(requireContext()).addOnCompleteListener {
+                    val intent = Intent(context, AuthenticationActivity::class.java)
+                    startActivity(intent)
+                }
             }
         }
         return super.onOptionsItemSelected(item)

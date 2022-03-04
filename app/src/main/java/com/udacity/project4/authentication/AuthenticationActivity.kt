@@ -3,8 +3,10 @@ package com.udacity.project4.authentication
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.Observer
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.IdpResponse
 import com.google.firebase.auth.FirebaseAuth
@@ -25,13 +27,27 @@ class AuthenticationActivity : AppCompatActivity() {
 
     private lateinit var mBinding: ActivityAuthenticationBinding
 
+    private val authViewModel by viewModels<AuthenticationViewModel>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        setContentView(R.layout.activity_authentication)
+
         mBinding = DataBindingUtil.setContentView(this, R.layout.activity_authentication)
         mBinding.loginButton.setOnClickListener {
             launchSignInFlow()
         }
+        authViewModel.authenticationState.observe(this, Observer { authState ->
+            when(authState) {
+                AuthenticationViewModel.AuthenticationState.AUTHENTICATED -> {
+                    val intent = Intent(this, RemindersActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                } else -> {
+
+                }
+            }
+        })
+
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -53,7 +69,6 @@ class AuthenticationActivity : AppCompatActivity() {
     }
 
     private fun launchSignInFlow() {
-
         // Give users the option to sign in / register with their email or Google account.
         // If users choose to register with their email,
         // they will need to create a password as well.

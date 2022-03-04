@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.Observer
 import com.udacity.project4.R
 import com.udacity.project4.base.BaseFragment
 import com.udacity.project4.base.NavigationCommand
@@ -51,6 +52,12 @@ class SaveReminderFragment : BaseFragment() {
 //             1) add a geofencing request
 //             2) save the reminder to the local db
         }
+
+        _viewModel.selectedPOI.observe(viewLifecycleOwner, Observer {
+            if (it != null) {
+                binding.selectedLocation.text = it.name
+            }
+        })
     }
 
     override fun onDestroy() {
