@@ -112,7 +112,7 @@ class SaveReminderFragment : BaseFragment() {
                     reminderItem.longitude!!,
                     GeofencingConstants.GEOFENCE_RADIUS_IN_METERS.toFloat()
                 )
-                .setExpirationDuration(GeofencingConstants.GEOFENCE_EXPIRATION_IN_MILLISECONDS)
+                .setExpirationDuration(Geofence.NEVER_EXPIRE)
                 .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
                 .build()
 
@@ -159,7 +159,7 @@ class SaveReminderFragment : BaseFragment() {
         val foregroundLocationApproved = (
                 PackageManager.PERMISSION_GRANTED ==
                         ActivityCompat.checkSelfPermission(
-                            context!!,
+                            requireContext(),
                             Manifest.permission.ACCESS_FINE_LOCATION
                         ))
         val backgroundPermissionApproved =
@@ -190,7 +190,6 @@ class SaveReminderFragment : BaseFragment() {
             }
             else -> REQUEST_FOREGROUND_ONLY_PERMISSIONS_REQUEST_CODE
         }
-        Log.d(TAG, "Request foreground only location permission")
         requestPermissions(
             permissionsArray,
             resultCode
@@ -248,12 +247,7 @@ class SaveReminderFragment : BaseFragment() {
             settingsClient.checkLocationSettings(builder.build())
         locationSettingsResponseTask.addOnFailureListener { exception ->
             if (exception is ResolvableApiException && resolve){
-                try {
-                    exception.startResolutionForResult(activity,
-                        REQUEST_TURN_DEVICE_LOCATION_ON)
-                } catch (sendEx: IntentSender.SendIntentException) {
-                    Log.d(TAG, "Error getting location settings resolution: " + sendEx.message)
-                }
+                startIntentSenderForResult(exception.resolution.intentSender, REQUEST_TURN_DEVICE_LOCATION_ON, null, 0, 0, 0, null)
             } else {
                 Snackbar.make(
                     binding.root,
