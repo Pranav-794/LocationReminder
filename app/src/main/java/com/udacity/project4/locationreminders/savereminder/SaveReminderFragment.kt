@@ -104,31 +104,35 @@ class SaveReminderFragment : BaseFragment() {
         // TODO: Step 10 add in code to add the geofence
         val reminderItem = _viewModel.savedReminder.value ?: return
 
-        val geofence = Geofence.Builder()
-            .setRequestId(reminderItem.id)
-            .setCircularRegion(reminderItem.latitude!!,
-                reminderItem.longitude!!,
-                GeofencingConstants.GEOFENCE_RADIUS_IN_METERS.toFloat()
-            )
-            .setExpirationDuration(GeofencingConstants.GEOFENCE_EXPIRATION_IN_MILLISECONDS)
-            .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
-            .build()
+        if(reminderItem.longitude != null && reminderItem.latitude != null) {
+            val geofence = Geofence.Builder()
+                .setRequestId(reminderItem.id)
+                .setCircularRegion(
+                    reminderItem.latitude!!,
+                    reminderItem.longitude!!,
+                    GeofencingConstants.GEOFENCE_RADIUS_IN_METERS.toFloat()
+                )
+                .setExpirationDuration(GeofencingConstants.GEOFENCE_EXPIRATION_IN_MILLISECONDS)
+                .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER)
+                .build()
 
-        val geofencingRequest = GeofencingRequest.Builder()
-            .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
-            .addGeofence(geofence)
-            .build()
+            val geofencingRequest = GeofencingRequest.Builder()
+                .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+                .addGeofence(geofence)
+                .build()
 
-        geofencingClient.addGeofences(
-            geofencingRequest,
-            geofencePendingIntent)?.run {
+            geofencingClient.addGeofences(
+                geofencingRequest,
+                geofencePendingIntent
+            )?.run {
                 addOnSuccessListener {
                     _viewModel.saveReminder(reminderItem)
                     _viewModel.onSaveFinished()
                 }
                 addOnFailureListener {
-                 _viewModel.onSaveFinished()
+                    _viewModel.onSaveFinished()
                 }
+            }
         }
     }
 
