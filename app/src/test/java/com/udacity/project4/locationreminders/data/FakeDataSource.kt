@@ -29,6 +29,7 @@ class FakeDataSource : ReminderDataSource {
 
     override suspend fun getReminder(id: String): Result<ReminderDTO> {
         val reminder = remindersData[id] ?: return Result.Error(mockErrorMessage)
+        if (shouldReturnError) return Result.Error(mockErrorMessage)
         return Result.Success(reminder)
     }
 

@@ -74,6 +74,18 @@ class RemindersLocalRepositoryTest {
     }
 
     @Test
+    fun retrieveReminder_notFoundById() = runBlocking {
+
+        val result = remindersRepository.getReminder("random_id!")
+
+        assertThat(result.succeeded, `is`(false))
+        result as Result.Error
+        assertThat(result.message, notNullValue())
+        assertThat(result.message, `is`("Reminder not found!"))
+    }
+
+
+    @Test
     fun saveReminders_delete_getAlLReminders() = runBlocking {
         val reminder = ReminderDTO(
             "New Reminder",

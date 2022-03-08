@@ -20,6 +20,8 @@ import com.udacity.project4.locationreminders.data.local.LocalDB
 import com.udacity.project4.locationreminders.data.local.RemindersLocalRepository
 import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.util.DataBindingIdlingResource
+import com.udacity.project4.util.monitorActivity
+import com.udacity.project4.util.monitorFragment
 import com.udacity.project4.utils.EspressoIdlingResource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -48,6 +50,7 @@ class ReminderListFragmentTest : AutoCloseKoinTest() {
 //    TODO: add testing for the error messages.
     private lateinit var repository: ReminderDataSource
     private lateinit var appContext: Application
+    private val dataBindingIdlingResource = DataBindingIdlingResource()
 
     /**
      * As we use Koin as a Service Locator Library to develop our code, we'll also use Koin to test our code.
@@ -86,9 +89,14 @@ class ReminderListFragmentTest : AutoCloseKoinTest() {
         }
     }
 
+    /**
+     * Idling resources tell Espresso that the app is idle or busy. This is needed when operations
+     * are not scheduled in the main Looper (for example when executed on a different thread).
+     */
     @Before
     fun registerIdlingResource() {
         IdlingRegistry.getInstance().register(EspressoIdlingResource.countingIdlingResource)
+        IdlingRegistry.getInstance().register(dataBindingIdlingResource)
     }
 
 
@@ -98,6 +106,7 @@ class ReminderListFragmentTest : AutoCloseKoinTest() {
     @After
     fun unregisterIdlingResource() {
         IdlingRegistry.getInstance().unregister(EspressoIdlingResource.countingIdlingResource)
+        IdlingRegistry.getInstance().unregister(dataBindingIdlingResource)
     }
 
     @After
@@ -111,7 +120,8 @@ class ReminderListFragmentTest : AutoCloseKoinTest() {
     fun emptyList_DisplayedInUi() {
         // given - list is empty
         // When - reminder list fragment is launched
-        launchFragmentInContainer<ReminderListFragment>(Bundle(), R.style.AppTheme)
+        val fragment = launchFragmentInContainer<ReminderListFragment>(Bundle(), R.style.AppTheme)
+        dataBindingIdlingResource.monitorFragment(fragment)
         // Then - verify all items exist
         onView(withId(R.id.noDataTextView)).check(matches(isDisplayed()))
     }
@@ -133,8 +143,8 @@ class ReminderListFragmentTest : AutoCloseKoinTest() {
         }
 
         // When - reminder list fragment is launched
-        launchFragmentInContainer<ReminderListFragment>(Bundle(), R.style.AppTheme)
-
+        val fragment = launchFragmentInContainer<ReminderListFragment>(Bundle(), R.style.AppTheme)
+        dataBindingIdlingResource.monitorFragment(fragment)
         // Then - verify all items exist
         onView(withText(reminder.title)).check(matches(isDisplayed()))
         onView(withText(reminder.description)).check(matches(isDisplayed()))
@@ -147,10 +157,11 @@ class ReminderListFragmentTest : AutoCloseKoinTest() {
         // given -- list is empty
 
         // When - reminder list fragment is launched
-        val scenario = launchFragmentInContainer<ReminderListFragment>(Bundle(), R.style.AppTheme)
+        val fragment = launchFragmentInContainer<ReminderListFragment>(Bundle(), R.style.AppTheme)
+        dataBindingIdlingResource.monitorFragment(fragment)
 
         val navController = mock(NavController::class.java)
-        scenario.onFragment {
+        fragment.onFragment {
             Navigation.setViewNavController(it.view!!, navController)
         }
 

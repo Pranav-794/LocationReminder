@@ -1,6 +1,7 @@
 package com.udacity.project4
 
 import android.app.Application
+import android.view.View
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.espresso.Espresso.onView
@@ -9,7 +10,11 @@ import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.RootMatchers
+import androidx.test.espresso.matcher.RootMatchers.withDecorView
 import androidx.test.espresso.matcher.ViewMatchers.*
+import androidx.test.ext.junit.rules.ActivityScenarioRule
+import androidx.test.ext.junit.rules.activityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.udacity.project4.locationreminders.RemindersActivity
@@ -22,8 +27,11 @@ import com.udacity.project4.util.DataBindingIdlingResource
 import com.udacity.project4.util.monitorActivity
 import com.udacity.project4.utils.EspressoIdlingResource
 import kotlinx.coroutines.runBlocking
+import org.hamcrest.CoreMatchers
+import org.hamcrest.Matchers.not
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -31,20 +39,23 @@ import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 import org.koin.dsl.module
-import org.koin.test.AutoCloseKoinTest
+import org.koin.test.KoinTest
 import org.koin.test.get
 
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 //END TO END test to black box test the app
 class RemindersActivityTest :
-    AutoCloseKoinTest() {// Extended Koin Test - embed autoclose @after method to close Koin after every test
+    KoinTest {// Extended Koin Test - embed autoclose @after method to close Koin after every test
+
+    @get:Rule
+    var activityScenarioRule = ActivityScenarioRule(RemindersActivity::class.java)
 
     private lateinit var repository: ReminderDataSource
     private lateinit var appContext: Application
     private lateinit var viewModel: SaveReminderViewModel
     private val dataBindingIdlingResource = DataBindingIdlingResource()
-
+    private lateinit var decorView: View
     /**
      * Idling resources tell Espresso that the app is idle or busy. This is needed when operations
      * are not scheduled in the main Looper (for example when executed on a different thread).
@@ -101,6 +112,10 @@ class RemindersActivityTest :
         runBlocking {
             repository.deleteAllReminders()
         }
+
+        activityScenarioRule.scenario.onActivity { activity ->
+            decorView = activity.window.decorView
+        }
     }
 
 
@@ -115,8 +130,8 @@ class RemindersActivityTest :
 
         // sets & saves the location
         onView(withId(R.id.selectLocation)).perform(click())
-        viewModel.reminderSelectedLocationStr.postValue("Googleplex")
-        pressBack()
+        onView(withId(R.id.map)).perform(click())
+        onView(withId(R.id.save_button)).perform(click())
 
         val reminderTitle = "Espresso Title!"
         val reminderDesc = "Description by Espresso!"
@@ -127,12 +142,17 @@ class RemindersActivityTest :
         // save reminder
         onView(withId(R.id.saveReminder)).perform(click())
 
+        onView(withText(R.string.reminder_saved)).inRoot(
+            withDecorView(CoreMatchers.not(decorView))
+        ).check(matches(isDisplayed()))
+
         onView(withText(reminderTitle)).check(matches(isDisplayed()))
         onView(withText(reminderDesc)).check(matches(isDisplayed()))
 
         // close activity
         activityScenario.close()
     }
+
 
     @Test
     fun create_InvalidReminder_TitleError() {
@@ -144,6 +164,8 @@ class RemindersActivityTest :
         // save reminder
         onView(withId(R.id.saveReminder)).perform(click())
         onView(withText(appContext.getString(R.string.err_enter_title))).check(matches(isDisplayed()))
+        // close activity
+        activityScenario.close()
     }
 
     @Test
@@ -163,6 +185,8 @@ class RemindersActivityTest :
                 isDisplayed()
             )
         )
+        // close activity
+        activityScenario.close()
     }
 
     @Test
@@ -172,6 +196,8 @@ class RemindersActivityTest :
         dataBindingIdlingResource.monitorActivity(activityScenario)
 
         onView(withId(R.id.noDataTextView)).check(matches(isDisplayed()))
+        // close activity
+        activityScenario.close()
     }
 
     private fun navigateToSaveReminderScreen() {
