@@ -53,16 +53,12 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         setHasOptionsMenu(true)
         setDisplayHomeAsUpEnabled(true)
 
-//        TODO: add the map setup implementation
         val mapFragment = childFragmentManager.findFragmentById(R.id.map)
         mapFragment?.let {
             (mapFragment as SupportMapFragment).getMapAsync(this)
         }
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context!!);
 
-//        TODO: add style to the map
-
-//        TODO: call this function after the user confirms on the selected location
         binding.saveButton.setOnClickListener {
             onLocationSelected()
         }
