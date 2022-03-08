@@ -5,13 +5,13 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Resources
+import android.location.Geocoder
 import android.location.Location
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.view.*
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.navigation.fragment.findNavController
@@ -34,6 +34,7 @@ import com.udacity.project4.locationreminders.savereminder.SaveReminderViewModel
 import com.udacity.project4.utils.setDisplayHomeAsUpEnabled
 import org.koin.android.ext.android.inject
 import timber.log.Timber
+import java.util.*
 
 
 class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
@@ -78,7 +79,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         //        TODO: When the user confirms on the selected location,
         //         send back the selected location details to the view model
         //         and navigate back to the previous fragment to save the reminder and add the geofence
-        if(currentPOIMarker == null) {
+        if (currentPOIMarker == null) {
             Toast.makeText(context, selectPOIText, Toast.LENGTH_SHORT).show()
         } else {
             _viewModel.savePOILocation(currentPOI)
@@ -118,6 +119,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         mMap = googleMap
         // track current location
         setPoiClick(mMap)
+        setLocationClick(mMap)
         setMapStyle(mMap)
         enableMyLocation()
     }
@@ -131,8 +133,16 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         val locationSettingsResponseTask =
             settingsClient.checkLocationSettings(builder.build())
         locationSettingsResponseTask.addOnFailureListener { exception ->
-            if (exception is ResolvableApiException && resolve){
-                startIntentSenderForResult(exception.resolution.intentSender, REQUEST_TURN_DEVICE_LOCATION_ON, null, 0, 0, 0, null)
+            if (exception is ResolvableApiException && resolve) {
+                startIntentSenderForResult(
+                    exception.resolution.intentSender,
+                    REQUEST_TURN_DEVICE_LOCATION_ON,
+                    null,
+                    0,
+                    0,
+                    0,
+                    null
+                )
             } else {
                 Snackbar.make(
                     binding.root,
@@ -143,14 +153,19 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             }
         }
         locationSettingsResponseTask.addOnCompleteListener {
-            if ( it.isSuccessful ) {
+            if (it.isSuccessful) {
                 fusedLocationClient.lastLocation
                     .addOnSuccessListener { location: Location? ->
                         // Got last known location. In some rare situations this can be null.
                         if (location != null) {
                             val zoomLevel = 15f
                             val currentLatLng = LatLng(location.latitude, location.longitude)
-                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, zoomLevel))
+                            mMap.moveCamera(
+                                CameraUpdateFactory.newLatLngZoom(
+                                    currentLatLng,
+                                    zoomLevel
+                                )
+                            )
                         }
                     }
             }
@@ -165,6 +180,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             }
         }
     }
+
     private fun setPoiClick(map: GoogleMap) {
         map.setOnPoiClickListener { poi ->
             currentPOIMarker?.remove()
@@ -176,6 +192,26 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             poiMarker?.showInfoWindow()
             currentPOIMarker = poiMarker
             currentPOI = poi
+        }
+    }
+
+    private fun setLocationClick(map: GoogleMap) {
+        map.setOnMapClickListener {
+            val addresses =
+                Geocoder(context, Locale.getDefault()).getFromLocation(it.latitude, it.longitude, 1)
+            if (addresses.isNotEmpty()) {
+                val address: String = addresses[0].getAddressLine(0)
+                val addressPoi = PointOfInterest(it, null, address)
+                currentPOIMarker?.remove()
+                val poiMarker = map.addMarker(
+                    MarkerOptions()
+                        .position(addressPoi.latLng)
+                        .title(addressPoi.name)
+                )
+                poiMarker?.showInfoWindow()
+                currentPOIMarker = poiMarker
+                currentPOI = addressPoi
+            }
         }
     }
 
@@ -191,7 +227,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
             )
 
             if (!success) {
-               Timber.e("Style parsing failed.")
+                Timber.e("Style parsing failed.")
             }
         } catch (e: Resources.NotFoundException) {
             Timber.e("Can't find style. Error: ${e.message}")
@@ -199,14 +235,16 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
     }
 
 
-    private fun isPermissionGranted() : Boolean {
+    private fun isPermissionGranted(): Boolean {
         return ContextCompat.checkSelfPermission(
             requireContext(),
-            Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
                 &&
                 ContextCompat.checkSelfPermission(
                     requireContext(),
-                    Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) == PackageManager.PERMISSION_GRANTED
 
     }
 
@@ -214,8 +252,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         if (isPermissionGranted()) {
             mMap.isMyLocationEnabled = true
             zoomToCurrentLocation(true)
-        }
-        else if(shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
+        } else if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
             Snackbar.make(
                 requireActivity().findViewById(android.R.id.content),
                 R.string.location_required_error,
@@ -227,19 +264,19 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                         REQUEST_LOCATION_PERMISSION
                     )
                 }.show()
-        }
-        else {
+        } else {
             requestPermissions(
                 arrayOf<String>(Manifest.permission.ACCESS_FINE_LOCATION),
                 REQUEST_LOCATION_PERMISSION
             )
         }
     }
-    
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
-        grantResults: IntArray) {
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         // Check if location permissions are granted and if so enable the
         // location data layer.
@@ -259,8 +296,8 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
                             flags = Intent.FLAG_ACTIVITY_NEW_TASK
                         })
                     }.show()
-                }
             }
+        }
 
     }
 
