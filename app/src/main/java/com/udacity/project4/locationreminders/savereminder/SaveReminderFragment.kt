@@ -207,7 +207,7 @@ class SaveReminderFragment : BaseFragment() {
     ) {
         // TODO: Step 5 add code to handle the result of the user's permission
         Log.d(TAG, "onRequestPermissionResult")
-
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (
             grantResults.isEmpty() ||
             grantResults[LOCATION_PERMISSION_INDEX] == PackageManager.PERMISSION_DENIED ||
@@ -216,7 +216,7 @@ class SaveReminderFragment : BaseFragment() {
                     PackageManager.PERMISSION_DENIED)
         ) {
             Snackbar.make(
-                binding.root,
+                requireActivity().findViewById(android.R.id.content),
                 R.string.permission_denied_explanation,
                 Snackbar.LENGTH_INDEFINITE
             )
@@ -239,8 +239,8 @@ class SaveReminderFragment : BaseFragment() {
     private fun checkDeviceLocationSettingsAndStartGeofence(resolve: Boolean = true) {
         // TODO: Step 6 add code to check that the device's location is on
         val locationRequest = LocationRequest.create().apply {
-            priority = LocationRequest.PRIORITY_LOW_POWER
-        }
+                priority = LocationRequest.PRIORITY_LOW_POWER
+            }
         val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
         val settingsClient = LocationServices.getSettingsClient(context!!)
         val locationSettingsResponseTask =
