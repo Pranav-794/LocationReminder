@@ -283,6 +283,7 @@ class SelectLocationFragment : BaseFragment(), OnMapReadyCallback {
         // location data layer.
         if (requestCode == REQUEST_LOCATION_PERMISSION) {
             if (grantResults.isNotEmpty() && (grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                mMap.isMyLocationEnabled = true
                 zoomToCurrentLocation(false)
             } else {
                 Snackbar.make(
